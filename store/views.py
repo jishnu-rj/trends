@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect
 from django.views.generic import View,TemplateView,DeleteView
 from store.forms import RegistrationForm,LoginForm
 from django.contrib.auth import authenticate,login,logout
-from store.models import Product,BasketItem,Size
+from store.models import Product,BasketItem,Size,Order,OrderItems
 from django.contrib import messages
 
 
@@ -154,6 +154,33 @@ class  CheckoutView(View):
         email=request.POST.get("email")
         phone=request.POST.get("phone")
         address=request.POST.get("address")
-        print(email,phone,address)
-        return redirect("index")
+
+    # creating order instance
+        
+        order_obj=Order.objects.create(
+
+            user_object=request.user,
+            delivery_address=address,
+            phone=phone,
+            total=request.user.cart.basket_total
+
+        )
+    # creating order_item_instance
+        
+        try:
+            basket_item=request.user.cart.cart_items
+            for bi in basket_item:
+                OrderItems.objects.create(
+                    order_object=order_obj,
+                    basket_item_object=bi,
+                )
+                bi.is_order_placed=True
+                bi.save()
+        except:
+            order_obj.delete()
+        finally:
+
+            return redirect("index")
+    
+
 
